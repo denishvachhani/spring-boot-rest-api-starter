@@ -1,19 +1,19 @@
 package com.example.customeridentitydemo.dto;
 
+import com.example.customeridentitydemo.client.OrderResponseDTO;
 import com.example.customeridentitydemo.model.CustomerStatus;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class CustomerResponseDTO {
+
     private Long id;
     private String firstName;
     private String lastName;
@@ -24,4 +24,7 @@ public class CustomerResponseDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<AddressResponseDTO> addresses;
+    private List<OrderResponseDTO> orders;
+
+    
 }

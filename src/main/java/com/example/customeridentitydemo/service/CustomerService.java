@@ -1,5 +1,7 @@
 package com.example.customeridentitydemo.service;
 
+import com.example.customeridentitydemo.client.OrderResponseDTO;
+import com.example.customeridentitydemo.client.OrderServiceClient;
 import com.example.customeridentitydemo.dto.AddressRequestDTO;
 import com.example.customeridentitydemo.dto.AddressResponseDTO;
 import com.example.customeridentitydemo.dto.CustomerRequestDTO;
@@ -17,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,6 +28,9 @@ public class CustomerService {
 
     @Autowired
     private CustomerRepository customerRepository;
+
+    @Autowired
+    private OrderServiceClient orderServiceClient;
 
     public Page<CustomerResponseDTO> getAllCustomers(Pageable pageable) {
         return customerRepository.findAllByDeletedAtIsNull(pageable)
@@ -55,7 +61,18 @@ public class CustomerService {
     public CustomerResponseDTO getCustomerById(Long id) {
         Customer customer = customerRepository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + id));
-        return convertToCustomerDto(customer);
+
+        List<OrderResponseDTO> orders = Collections.emptyList();
+        try {
+            orders = orderServiceClient.getOrdersByCustomerId(id);
+        } catch (Exception e) {
+            // Log the exception, but don't fail the request if the order service is down
+            // In a real-world scenario, you might want to implement a circuit breaker here
+        }
+
+        CustomerResponseDTO customerResponseDTO = convertToCustomerDto(customer);
+        customerResponseDTO.setOrders(orders);
+        return customerResponseDTO;
     }
 
     @Transactional
@@ -117,7 +134,8 @@ public class CustomerService {
                 customer.getStatus(),
                 customer.getCreatedAt(),
                 customer.getUpdatedAt(),
-                addressDtos
+                addressDtos,
+                null // Orders are fetched separately
         );
     }
 

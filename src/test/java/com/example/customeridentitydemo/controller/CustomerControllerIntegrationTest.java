@@ -77,7 +77,7 @@ class CustomerControllerIntegrationTest {
 
         customerResponseDTO = new CustomerResponseDTO(
                 1L, "John", "Doe", "john.doe@example.com", "123-45-678", "555-1234",
-                CustomerStatus.ACTIVE, LocalDateTime.now(), LocalDateTime.now(), Collections.singletonList(addressResponseDTO)
+                CustomerStatus.ACTIVE, LocalDateTime.now(), LocalDateTime.now(), Collections.singletonList(addressResponseDTO), null
         );
 
         customerRequestDTO = new CustomerRequestDTO(
