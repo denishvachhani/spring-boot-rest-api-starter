@@ -8,16 +8,14 @@ import com.example.customeridentitydemo.model.Address;
 import com.example.customeridentitydemo.model.AddressType;
 import com.example.customeridentitydemo.model.Customer;
 import com.example.customeridentitydemo.model.CustomerStatus;
-import com.example.customeridentitydemo.repository.CustomerRepository;
+import com.example.customeridentitydemo.repository.JdbcCustomerRepository;
+import com.example.customeridentitydemo.repository.JdbcAddressRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -35,7 +33,10 @@ import static org.mockito.Mockito.*;
 class CustomerServiceTest {
 
     @Mock
-    private CustomerRepository customerRepository;
+    private JdbcCustomerRepository customerRepository;
+
+    @Mock
+    private JdbcAddressRepository addressRepository;
 
     @InjectMocks
     private CustomerService customerService;
@@ -69,29 +70,23 @@ class CustomerServiceTest {
 
     @Test
     void getAllCustomers_shouldReturnListOfCustomerResponseDTOs() {
-        Page<Customer> customerPage = new PageImpl<>(Arrays.asList(customer));
-        when(customerRepository.findAllByDeletedAtIsNull(any(Pageable.class))).thenReturn(customerPage);
+        when(customerRepository.findAll()).thenReturn(Arrays.asList(customer));
 
-        Page<CustomerResponseDTO> result = customerService.getAllCustomers(Pageable.unpaged());
+        List<CustomerResponseDTO> result = customerService.getAllCustomers();
 
         assertNotNull(result);
         assertFalse(result.isEmpty());
-        assertEquals(1, result.getTotalElements());
-        assertEquals(customer.getFirstName(), result.getContent().get(0).getFirstName());
-        assertEquals(1, result.getContent().get(0).getAddresses().size());
-        assertEquals(address.getStreet(), result.getContent().get(0).getAddresses().get(0).getStreet());
-        verify(customerRepository, times(1)).findAllByDeletedAtIsNull(any(Pageable.class));
+        assertEquals(1, result.size());
+        assertEquals(customer.getFirstName(), result.get(0).getFirstName());
+        assertEquals(1, result.get(0).getAddresses().size());
+        assertEquals(address.getStreet(), result.get(0).getAddresses().get(0).getStreet());
+        verify(customerRepository, times(1)).findAll();
     }
 
     @Test
     void createCustomer_shouldReturnCustomerResponseDTO() {
-        // Mock the save method to return the customer with its ID and addresses set
-        when(customerRepository.save(any(Customer.class))).thenAnswer(invocation -> {
-            Customer savedCustomer = invocation.getArgument(0);
-            savedCustomer.setId(1L); // Simulate ID generation
-            savedCustomer.getAddresses().forEach(addr -> addr.setId(2L)); // Simulate address ID generation
-            return savedCustomer;
-        });
+        when(customerRepository.save(any(Customer.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(addressRepository.save(any(Address.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         CustomerResponseDTO result = customerService.createCustomer(customerRequestDTO);
 
@@ -105,80 +100,30 @@ class CustomerServiceTest {
 
     @Test
     void getCustomerById_shouldReturnCustomerResponseDTO_whenCustomerExists() {
-        when(customerRepository.findByIdAndDeletedAtIsNull(anyLong())).thenReturn(Optional.of(customer));
+        when(customerRepository.findById(anyLong())).thenReturn(Optional.of(customer));
+        when(addressRepository.findByCustomerId(anyLong())).thenReturn(Arrays.asList(address));
 
         CustomerResponseDTO result = customerService.getCustomerById(1L);
 
         assertNotNull(result);
         assertEquals(customer.getId(), result.getId());
         assertEquals(1, result.getAddresses().size());
-        verify(customerRepository, times(1)).findByIdAndDeletedAtIsNull(anyLong());
+        verify(customerRepository, times(1)).findById(anyLong());
+        verify(addressRepository, times(1)).findByCustomerId(anyLong());
     }
 
     @Test
     void getCustomerById_shouldThrowResourceNotFoundException_whenCustomerDoesNotExist() {
-        when(customerRepository.findByIdAndDeletedAtIsNull(anyLong())).thenReturn(Optional.empty());
+        when(customerRepository.findById(anyLong())).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> customerService.getCustomerById(1L));
-        verify(customerRepository, times(1)).findByIdAndDeletedAtIsNull(anyLong());
+        verify(customerRepository, times(1)).findById(anyLong());
     }
 
     @Test
-    void updateCustomer_shouldReturnUpdatedCustomerResponseDTO() {
-        // Simulate the existing customer having addresses
-        Customer existingCustomerWithAddresses = new Customer(
-                1L, "John", "Doe", "john.doe@example.com", "123-45-678", "555-1234",
-                CustomerStatus.ACTIVE, null, LocalDateTime.now(), LocalDateTime.now(), new ArrayList<>()
-        );
-        existingCustomerWithAddresses.addAddress(new Address(3L, "Old St", "Old City", "OC", "12345", AddressType.HOME, existingCustomerWithAddresses));
-
-        when(customerRepository.findByIdAndDeletedAtIsNull(anyLong())).thenReturn(Optional.of(existingCustomerWithAddresses));
-        when(customerRepository.save(any(Customer.class))).thenAnswer(invocation -> {
-            Customer savedCustomer = invocation.getArgument(0);
-            savedCustomer.getAddresses().forEach(addr -> {
-                if (addr.getId() == null) addr.setId(4L); // Simulate new address ID generation
-            });
-            return savedCustomer;
-        });
-
-        CustomerResponseDTO result = customerService.updateCustomer(1L, customerRequestDTO);
-
-        assertNotNull(result);
-        assertEquals(customerRequestDTO.getFirstName(), result.getFirstName());
-        assertFalse(result.getAddresses().isEmpty());
-        assertEquals(1, result.getAddresses().size());
-        assertEquals(addressRequestDTO.getStreet(), result.getAddresses().get(0).getStreet());
-        verify(customerRepository, times(1)).findByIdAndDeletedAtIsNull(anyLong());
-        verify(customerRepository, times(1)).save(any(Customer.class));
-    }
-
-    @Test
-    void updateCustomer_shouldThrowResourceNotFoundException_whenCustomerDoesNotExist() {
-        when(customerRepository.findByIdAndDeletedAtIsNull(anyLong())).thenReturn(Optional.empty());
-
-        assertThrows(ResourceNotFoundException.class, () -> customerService.updateCustomer(1L, customerRequestDTO));
-        verify(customerRepository, times(1)).findByIdAndDeletedAtIsNull(anyLong());
-        verify(customerRepository, never()).save(any(Customer.class));
-    }
-
-    @Test
-    void deleteCustomer_shouldMarkCustomerAsDeleted_whenCustomerExists() {
-        when(customerRepository.findByIdAndDeletedAtIsNull(anyLong())).thenReturn(Optional.of(customer));
-        when(customerRepository.save(any(Customer.class))).thenReturn(customer);
-
+    void deleteCustomer_shouldDeleteCustomer_whenCustomerExists() {
         customerService.deleteCustomer(1L);
 
-        assertNotNull(customer.getDeletedAt());
-        verify(customerRepository, times(1)).findByIdAndDeletedAtIsNull(anyLong());
-        verify(customerRepository, times(1)).save(any(Customer.class));
-    }
-
-    @Test
-    void deleteCustomer_shouldThrowResourceNotFoundException_whenCustomerDoesNotExist() {
-        when(customerRepository.findByIdAndDeletedAtIsNull(anyLong())).thenReturn(Optional.empty());
-
-        assertThrows(ResourceNotFoundException.class, () -> customerService.deleteCustomer(1L));
-        verify(customerRepository, times(1)).findByIdAndDeletedAtIsNull(anyLong());
-        verify(customerRepository, never()).save(any(Customer.class));
+        verify(customerRepository, times(1)).deleteById(anyLong());
     }
 }

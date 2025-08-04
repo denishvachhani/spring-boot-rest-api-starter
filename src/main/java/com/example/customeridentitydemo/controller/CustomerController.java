@@ -5,8 +5,6 @@ import com.example.customeridentitydemo.dto.CustomerResponseDTO;
 import com.example.customeridentitydemo.service.CustomerService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,8 +19,8 @@ public class CustomerController {
     private CustomerService customerService;
 
     @GetMapping
-    public Page<CustomerResponseDTO> getAllCustomers(Pageable pageable) {
-        return customerService.getAllCustomers(pageable);
+    public List<CustomerResponseDTO> getAllCustomers() {
+        return customerService.getAllCustomers();
     }
 
     @PostMapping

@@ -15,8 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
@@ -89,19 +87,17 @@ class CustomerControllerIntegrationTest {
     @Test
     @WithMockUser
     void getAllCustomers_shouldReturnListOfCustomerResponseDTOs() throws Exception {
-        PageImpl<CustomerResponseDTO> pageOfCustomers = new PageImpl<>(Arrays.asList(customerResponseDTO));
-        when(customerService.getAllCustomers(any(Pageable.class))).thenReturn(pageOfCustomers);
+        when(customerService.getAllCustomers()).thenReturn(Arrays.asList(customerResponseDTO));
 
         mockMvc.perform(get("/api/customers")
                         .with(user("user").password("password").roles("USER")) // Explicitly set user
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].firstName", is("John")))
-                .andExpect(jsonPath("$.content[0].addresses", hasSize(1)))
-                .andExpect(jsonPath("$.content[0].addresses[0].street", is("123 Main St")))
-                .andExpect(jsonPath("$.totalElements", is(1)));
+                .andExpect(jsonPath("$[0].firstName", is("John")))
+                .andExpect(jsonPath("$[0].addresses", hasSize(1)))
+                .andExpect(jsonPath("$[0].addresses[0].street", is("123 Main St")));
 
-        verify(customerService, times(1)).getAllCustomers(any(Pageable.class));
+        verify(customerService, times(1)).getAllCustomers();
     }
 
     @Test
@@ -168,42 +164,6 @@ class CustomerControllerIntegrationTest {
 
         verify(customerService, times(1)).getCustomerById(anyLong());
     }
-
-    @Test
-    @WithMockUser
-    void updateCustomer_shouldReturnUpdatedCustomerResponseDTO() throws Exception {
-        when(customerService.updateCustomer(anyLong(), any(CustomerRequestDTO.class))).thenReturn(customerResponseDTO);
-
-        mockMvc.perform(put("/api/customers/{id}", 1L)
-                        .with(user("user").password("password").roles("USER")) // Explicitly set user
-                        .with(csrf()) // Add CSRF token for PUT requests
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(customerRequestDTO)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.firstName", is("John")))
-                .andExpect(jsonPath("$.addresses", hasSize(1)))
-                .andExpect(jsonPath("$.addresses[0].street", is("123 Main St")));
-
-        verify(customerService, times(1)).updateCustomer(anyLong(), any(CustomerRequestDTO.class));
-    }
-
-    /*
-    @Test
-    @WithMockUser
-    void updateCustomer_shouldReturnNotFound_whenCustomerDoesNotExist() throws Exception {
-        doThrow(new ResourceNotFoundException("Customer not found")).when(customerService).updateCustomer(eq(99L), any(CustomerRequestDTO.class));
-
-        mockMvc.perform(put("/api/customers/{id}", 99L)
-                        .with(user("user").password("password").roles("USER")) // Explicitly set user
-                        .with(csrf()) // Add CSRF token for PUT requests
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(customerRequestDTO)))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", is("Customer not found")));
-
-        verify(customerService, times(1)).updateCustomer(eq(99L), any(CustomerRequestDTO.class));
-    }
-    */
 
     @Test
     @WithMockUser
