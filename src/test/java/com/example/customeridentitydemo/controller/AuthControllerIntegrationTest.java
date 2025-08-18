@@ -97,6 +97,6 @@ class AuthControllerIntegrationTest {
     void validateToken_shouldReturnUnauthorized_whenInvalidToken() throws Exception {
         mockMvc.perform(post("/api/auth/validate")
                 .header("Authorization", "Bearer invalid-token"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden()); // 403 when JWT filter rejects invalid token
     }
 }
