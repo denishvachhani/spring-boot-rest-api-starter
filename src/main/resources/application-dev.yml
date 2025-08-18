@@ -1,0 +1,12 @@
+# Development profile configuration
+spring:
+  flyway:
+    # Include sample data migrations in development
+    locations: classpath:db/migration,classpath:db/migration/dev
+
+# Debug logging for development
+logging:
+  level:
+    com.example.customeridentitydemo: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG

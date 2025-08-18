@@ -1,6 +1,7 @@
+# Test profile configuration
 spring:
-  application:
-    name: customerIdentityDemo
+  profiles:
+    active: test
   datasource:
     url: jdbc:postgresql://localhost:5432/customer_identity_db
     username: demo_user
@@ -10,15 +11,8 @@ spring:
     enabled: true
     baseline-on-migrate: true
     baseline-version: 0
-    locations: classpath:db/migration
-  profiles:
-    active: dev
+    locations: classpath:db/migration,classpath:db/migration/dev
 
+# Mock external service URLs for testing
 order-service:
   url: http://localhost:8081
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"

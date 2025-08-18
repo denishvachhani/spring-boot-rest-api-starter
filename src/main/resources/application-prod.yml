@@ -1,0 +1,29 @@
+# Production profile configuration
+spring:
+  datasource:
+    # Use environment variables in production
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/customer_identity_db}
+    username: ${DB_USERNAME:demo_user}
+    password: ${DB_PASSWORD:demo_pass}
+  flyway:
+    # Only run schema migrations, no sample data
+    locations: classpath:db/migration
+
+# External service URLs from environment
+order-service:
+  url: ${ORDER_SERVICE_URL:http://localhost:8081}
+
+# Production logging - less verbose
+logging:
+  level:
+    com.example.customeridentitydemo: WARN
+    org.springframework.web: WARN
+    org.springframework.security: WARN
+    root: ERROR
+
+# Restrict actuator endpoints in production
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
