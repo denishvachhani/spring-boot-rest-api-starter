@@ -71,6 +71,7 @@ class CustomerServiceTest {
     @Test
     void getAllCustomers_shouldReturnListOfCustomerResponseDTOs() {
         when(customerRepository.findAll()).thenReturn(Arrays.asList(customer));
+        when(addressRepository.findByCustomerId(customer.getId())).thenReturn(Arrays.asList(address));
 
         List<CustomerResponseDTO> result = customerService.getAllCustomers();
 

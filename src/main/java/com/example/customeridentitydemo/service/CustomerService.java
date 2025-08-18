@@ -14,6 +14,11 @@ import com.example.customeridentitydemo.repository.JdbcCustomerRepository;
 import com.example.customeridentitydemo.repository.JdbcAddressRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import org.springframework.web.util.HtmlUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -22,6 +27,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Validated
 public class CustomerService {
 
     @Autowired
@@ -34,18 +40,25 @@ public class CustomerService {
     private OrderServiceClient orderServiceClient;
 
     public List<CustomerResponseDTO> getAllCustomers() {
-        return customerRepository.findAll().stream()
+        List<Customer> customers = customerRepository.findAll();
+        customers.forEach(customer -> {
+            List<Address> addresses = addressRepository.findByCustomerId(customer.getId());
+            customer.setAddresses(addresses);
+        });
+        return customers.stream()
                 .map(this::convertToCustomerDto)
                 .collect(Collectors.toList());
     }
 
-    public CustomerResponseDTO createCustomer(CustomerRequestDTO customerRequestDTO) {
+    @Transactional
+    public CustomerResponseDTO createCustomer(@Valid @NotNull CustomerRequestDTO customerRequestDTO) {
         Customer customer = new Customer();
-        customer.setFirstName(customerRequestDTO.getFirstName());
-        customer.setLastName(customerRequestDTO.getLastName());
-        customer.setEmail(customerRequestDTO.getEmail());
-        customer.setSsn(customerRequestDTO.getSsn());
-        customer.setPhone(customerRequestDTO.getPhone());
+        // Sanitize input to prevent XSS
+        customer.setFirstName(sanitizeInput(customerRequestDTO.getFirstName()));
+        customer.setLastName(sanitizeInput(customerRequestDTO.getLastName()));
+        customer.setEmail(sanitizeInput(customerRequestDTO.getEmail()));
+        customer.setSsn(sanitizeInput(customerRequestDTO.getSsn()));
+        customer.setPhone(sanitizeInput(customerRequestDTO.getPhone()));
 
         Customer savedCustomer = customerRepository.save(customer);
 
@@ -82,19 +95,22 @@ public class CustomerService {
         return customerResponseDTO;
     }
 
+    @Transactional
     public void deleteCustomer(Long id) {
         customerRepository.deleteById(id);
     }
 
-    public CustomerResponseDTO updateCustomer(Long id, CustomerRequestDTO customerRequestDTO) {
+    @Transactional
+    public CustomerResponseDTO updateCustomer(@NotNull Long id, @Valid @NotNull CustomerRequestDTO customerRequestDTO) {
         Customer existingCustomer = customerRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + id));
 
-        existingCustomer.setFirstName(customerRequestDTO.getFirstName());
-        existingCustomer.setLastName(customerRequestDTO.getLastName());
-        existingCustomer.setEmail(customerRequestDTO.getEmail());
-        existingCustomer.setSsn(customerRequestDTO.getSsn());
-        existingCustomer.setPhone(customerRequestDTO.getPhone());
+        // Sanitize input to prevent XSS
+        existingCustomer.setFirstName(sanitizeInput(customerRequestDTO.getFirstName()));
+        existingCustomer.setLastName(sanitizeInput(customerRequestDTO.getLastName()));
+        existingCustomer.setEmail(sanitizeInput(customerRequestDTO.getEmail()));
+        existingCustomer.setSsn(sanitizeInput(customerRequestDTO.getSsn()));
+        existingCustomer.setPhone(sanitizeInput(customerRequestDTO.getPhone()));
 
         Customer updatedCustomer = customerRepository.update(existingCustomer);
 
@@ -112,6 +128,7 @@ public class CustomerService {
         return convertToCustomerDto(updatedCustomer);
     }
 
+    @Transactional
     public void populateTimestampsForExistingCustomers() {
         List<Customer> customers = customerRepository.findAll();
         for (Customer customer : customers) {
@@ -182,14 +199,21 @@ public class CustomerService {
                 addresses.add(new AddressRequestDTO(
                         "Street" + i + "-" + j,
                         "City" + i,
-                        "State" + (char)('A' + (int)(Math.random() * 26)),
-                        "" + (10000 + (int)(Math.random() * 89999)),
-                        AddressType.values()[(int)(Math.random() * AddressType.values().length)]
+                        "State" + (char) ('A' + (int) (Math.random() * 26)),
+                        "" + (10000 + (int) (Math.random() * 89999)),
+                        AddressType.values()[(int) (Math.random() * AddressType.values().length)]
                 ));
             }
             customerRequestDTO.setAddresses(addresses);
 
             createCustomer(customerRequestDTO);
         }
+    }
+
+    // Security helper methods
+    private String sanitizeInput(String input) {
+        if (input == null) return null;
+        // HTML encode to prevent XSS
+        return HtmlUtils.htmlEscape(input.trim());
     }
 }

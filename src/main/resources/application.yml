@@ -6,6 +6,31 @@ spring:
     username: demo_user
     password: demo_pass
     driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+  profiles:
+    active: dev
+
+---
+# Development profile - includes sample data
+spring:
+  config:
+    activate:
+      on-profile: dev
+  flyway:
+    locations: classpath:db/migration,classpath:db/migration/dev
+
+---
+# Production profile - no sample data
+spring:
+  config:
+    activate:
+      on-profile: prod
+  flyway:
+    locations: classpath:db/migration
 management:
   endpoints:
     web:
