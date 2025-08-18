@@ -22,3 +22,8 @@ management:
     web:
       exposure:
         include: "*"
+
+# JWT Configuration
+jwt:
+  secret: myVerySecretJwtKeyThatShouldBeAtLeast256BitsLongForProperSecurityAndShouldBeStoredInEnvironmentVariables
+  expiration: 3600

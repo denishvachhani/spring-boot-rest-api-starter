@@ -13,6 +13,8 @@ This is a very capable Spring Boot application with the following features:
 * Pagination and Sorting for customer retrieval
 * One-to-Many relationship (Customer to Address)
 * Flyway integration for migration setup
+* Profile configuration (Environment specific profile)
+* JWT Authentication (Replaced basic auth)
 
   🎯 Next Steps for Your Project:
 
