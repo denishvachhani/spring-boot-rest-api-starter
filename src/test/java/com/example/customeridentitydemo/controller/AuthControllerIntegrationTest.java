@@ -29,7 +29,7 @@ class AuthControllerIntegrationTest {
     void login_shouldReturnJwtToken_whenValidCredentials() throws Exception {
         LoginRequestDTO loginRequest = new LoginRequestDTO("admin", "admin123");
 
-        MvcResult result = mockMvc.perform(post("/api/auth/login")
+        MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
@@ -54,7 +54,7 @@ class AuthControllerIntegrationTest {
     void login_shouldReturnUnauthorized_whenInvalidCredentials() throws Exception {
         LoginRequestDTO loginRequest = new LoginRequestDTO("admin", "wrongpassword");
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isUnauthorized());
@@ -64,7 +64,7 @@ class AuthControllerIntegrationTest {
     void login_shouldReturnBadRequest_whenInvalidInput() throws Exception {
         LoginRequestDTO loginRequest = new LoginRequestDTO("", ""); // Empty credentials
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isBadRequest());
@@ -75,7 +75,7 @@ class AuthControllerIntegrationTest {
         // First login to get a token
         LoginRequestDTO loginRequest = new LoginRequestDTO("user", "password");
         
-        MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
+        MvcResult loginResult = mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
@@ -87,7 +87,7 @@ class AuthControllerIntegrationTest {
         );
 
         // Use the token to validate
-        mockMvc.perform(post("/api/auth/validate")
+        mockMvc.perform(post("/api/v1/auth/validate")
                 .header("Authorization", "Bearer " + loginResponse.getToken()))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Token is valid for user: user"));
@@ -95,7 +95,7 @@ class AuthControllerIntegrationTest {
 
     @Test
     void validateToken_shouldReturnUnauthorized_whenInvalidToken() throws Exception {
-        mockMvc.perform(post("/api/auth/validate")
+        mockMvc.perform(post("/api/v1/auth/validate")
                 .header("Authorization", "Bearer invalid-token"))
                 .andExpect(status().isForbidden()); // 403 when JWT filter rejects invalid token
     }

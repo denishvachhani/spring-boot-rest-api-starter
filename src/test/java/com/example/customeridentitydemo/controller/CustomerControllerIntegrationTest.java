@@ -89,7 +89,7 @@ class CustomerControllerIntegrationTest {
     void getAllCustomers_shouldReturnListOfCustomerResponseDTOs() throws Exception {
         when(customerService.getAllCustomers()).thenReturn(Arrays.asList(customerResponseDTO));
 
-        mockMvc.perform(get("/api/customers")
+        mockMvc.perform(get("/api/v1/customers")
                         .with(user("user").password("password").roles("USER")) // Explicitly set user
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -105,7 +105,7 @@ class CustomerControllerIntegrationTest {
     void createCustomer_shouldReturnCreatedCustomerResponseDTO() throws Exception {
         when(customerService.createCustomer(any(CustomerRequestDTO.class))).thenReturn(customerResponseDTO);
 
-        mockMvc.perform(post("/api/customers")
+        mockMvc.perform(post("/api/v1/customers")
                         .with(user("user").password("password").roles("USER")) // Explicitly set user
                         .with(csrf()) // Add CSRF token for POST requests
                         .contentType(MediaType.APPLICATION_JSON)
@@ -125,7 +125,7 @@ class CustomerControllerIntegrationTest {
                 "", "", "invalid-email", "", "", Collections.emptyList()
         );
 
-        mockMvc.perform(post("/api/customers")
+        mockMvc.perform(post("/api/v1/customers")
                         .with(user("user").password("password").roles("USER")) // Explicitly set user
                         .with(csrf()) // Add CSRF token for POST requests
                         .contentType(MediaType.APPLICATION_JSON)
@@ -139,7 +139,7 @@ class CustomerControllerIntegrationTest {
     void getCustomerById_shouldReturnCustomerResponseDTO_whenCustomerExists() throws Exception {
         when(customerService.getCustomerById(anyLong())).thenReturn(customerResponseDTO);
 
-        mockMvc.perform(get("/api/customers/{id}", 1L)
+        mockMvc.perform(get("/api/v1/customers/{id}", 1L)
                         .with(user("user").password("password").roles("USER")) // Explicitly set user
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -156,7 +156,7 @@ class CustomerControllerIntegrationTest {
     void getCustomerById_shouldReturnNotFound_whenCustomerDoesNotExist() throws Exception {
         doThrow(new ResourceNotFoundException("Customer not found")).when(customerService).getCustomerById(anyLong());
 
-        mockMvc.perform(get("/api/customers/{id}", 99L)
+        mockMvc.perform(get("/api/v1/customers/{id}", 99L)
                         .with(user("user").password("password").roles("USER")) // Explicitly set user
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
@@ -170,7 +170,7 @@ class CustomerControllerIntegrationTest {
     void deleteCustomer_shouldReturnNoContent_whenCustomerExists() throws Exception {
         doNothing().when(customerService).deleteCustomer(anyLong());
 
-        mockMvc.perform(delete("/api/customers/{id}", 1L)
+        mockMvc.perform(delete("/api/v1/customers/{id}", 1L)
                         .with(user("user").password("password").roles("USER")) // Explicitly set user
                         .with(csrf()) // Add CSRF token for DELETE requests
                         .contentType(MediaType.APPLICATION_JSON))
@@ -184,7 +184,7 @@ class CustomerControllerIntegrationTest {
     void deleteCustomer_shouldReturnNotFound_whenCustomerDoesNotExist() throws Exception {
         doThrow(new ResourceNotFoundException("Customer not found")).when(customerService).deleteCustomer(anyLong());
 
-        mockMvc.perform(delete("/api/customers/{id}", 99L)
+        mockMvc.perform(delete("/api/v1/customers/{id}", 99L)
                         .with(user("user").password("password").roles("USER")) // Explicitly set user
                         .with(csrf()) // Add CSRF token for DELETE requests
                         .contentType(MediaType.APPLICATION_JSON))

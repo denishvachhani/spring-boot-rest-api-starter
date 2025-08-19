@@ -29,7 +29,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/api/auth/login").permitAll() // Allow login endpoint
+                .requestMatchers("/api/v1/auth/login").permitAll() // Allow login endpoint
                 .requestMatchers("/actuator/**").permitAll() // Allow actuator endpoints
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // Allow Swagger
                 .anyRequest().authenticated() // All other requests require authentication
